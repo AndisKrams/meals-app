@@ -11,5 +11,5 @@ class MealAdmin(admin.ModelAdmin):
 
 @admin.register(MealRegistration)
 class MealRegistrationAdmin(admin.ModelAdmin):
-	list_display = ('date',)
-	filter_horizontal = ('meals',)
+    list_display = ('date',)
+    filter_horizontal = ('meals',)
