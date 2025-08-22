@@ -40,3 +40,21 @@ class MealRegistration(models.Model):
     def __str__(self):
         return f"Meal Registration for {self.date}"
 
+
+class MealChoice(models.Model):
+    child = models.ForeignKey(
+        Child,
+        on_delete=models.CASCADE,
+        related_name='meal_choices'
+    )
+    meal_registration = models.ForeignKey(
+        MealRegistration,
+        on_delete=models.CASCADE,
+        related_name='choices'
+    )
+    meal = models.ForeignKey(Meal, on_delete=models.CASCADE)
+    chosen_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.child} - {self.meal} on {self.meal_registration.date}"
+

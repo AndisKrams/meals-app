@@ -1,11 +1,14 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from django.contrib import messages
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm
 from django.core.mail import send_mail
 from django.conf import settings
-from .forms import UserParentRegistrationForm
+from django.utils import timezone
+from datetime import timedelta
+from .forms import UserParentRegistrationForm, MealChoiceForm
+from .models import Parent, Child, MealRegistration, MealChoice
 
 # Create your views here.
 
@@ -50,3 +53,56 @@ def password_reset_request(request):
     else:
         form = PasswordResetForm()
     return render(request, 'meals/password_reset.html', {'form': form})
+
+
+def meal_ordering(request):
+    if not request.user.is_authenticated:
+        return redirect('login')
+    parent = get_object_or_404(Parent, user=request.user)
+    children = parent.children.all()
+    # Find all dates with meal registrations
+    available_dates = MealRegistration.objects.order_by('date').values_list('date', flat=True)
+    # Find first available date for which no child has chosen a meal
+    chosen_dates = MealChoice.objects.filter(child__in=children).values_list('meal_registration__date', flat=True)
+    default_date = None
+    for date in available_dates:
+        if date not in chosen_dates:
+            default_date = date
+            break
+    if not default_date and available_dates:
+        default_date = available_dates[0]
+    # Allow user to pick date
+    selected_date = request.GET.get('date')
+    if selected_date:
+        selected_date = timezone.datetime.strptime(selected_date, '%Y-%m-%d').date()
+    else:
+        selected_date = default_date
+    meal_registration = MealRegistration.objects.filter(date=selected_date).first()
+    forms = []
+    if request.method == 'POST' and meal_registration:
+        for child in children:
+            form = MealChoiceForm(request.POST, prefix=str(child.id), meal_registration=meal_registration)
+            if form.is_valid():
+                MealChoice.objects.update_or_create(
+                    child=child,
+                    meal_registration=meal_registration,
+                    defaults={'meal': form.cleaned_data['meal']}
+                )
+            forms.append(form)
+        messages.success(request, f'Meal choices saved for {selected_date}.')
+        return redirect('meal_ordering')
+    else:
+        for child in children:
+            initial = {}
+            existing_choice = MealChoice.objects.filter(child=child, meal_registration=meal_registration).first()
+            if existing_choice:
+                initial['meal'] = existing_choice.meal
+            form = MealChoiceForm(prefix=str(child.id), initial=initial, meal_registration=meal_registration)
+            forms.append((child, form))
+    return render(request, 'meals/meal_ordering.html', {
+        'forms': forms,
+        'meal_registration': meal_registration,
+        'selected_date': selected_date,
+        'available_dates': available_dates,
+        'children': children,
+    })

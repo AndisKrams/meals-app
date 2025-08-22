@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.models import User
-from .models import Parent, Child
+from .models import Parent, Child, MealChoice, MealRegistration, Meal
 
 class UserParentRegistrationForm(forms.ModelForm):
     full_name = forms.CharField(max_length=150)
@@ -31,3 +31,15 @@ class ChildRegistrationForm(forms.ModelForm):
     class Meta:
         model = Child
         fields = ['first_name', 'last_name', 'year_group', 'class_name']
+
+class MealChoiceForm(forms.ModelForm):
+    class Meta:
+        model = MealChoice
+        fields = ['meal']
+
+    def __init__(self, *args, **kwargs):
+        meal_registration = kwargs.pop('meal_registration', None)
+        super().__init__(*args, **kwargs)
+        if meal_registration:
+            self.fields['meal'].queryset = meal_registration.meals.all()
+        self.fields['meal'].widget = forms.RadioSelect()
