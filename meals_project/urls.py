@@ -22,7 +22,6 @@ from django.contrib.auth import views as auth_views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path("accounts/", include("allauth.urls")),
-    path('', meals, name='meals'),  # Home page route
     path('meals/', include('meals.urls')),
     # Django built-in password reset views
     path('password-reset/', auth_views.PasswordResetView.as_view(), name='password_reset'),
