@@ -47,7 +47,6 @@ INSTALLED_APPS = [
     'django.contrib.sites',
     'allauth',
     'allauth.account',
-    'allauth.socialaccount',
     'meals',  # Custom app for meal management
 ]
 
