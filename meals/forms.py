@@ -39,10 +39,12 @@ class MealChoiceForm(forms.ModelForm):
     class Meta:
         model = MealChoice
         fields = ['meal']
+        widgets = {
+            'meal': forms.RadioSelect
+        }
 
     def __init__(self, *args, **kwargs):
         meal_registration = kwargs.pop('meal_registration', None)
         super().__init__(*args, **kwargs)
         if meal_registration:
             self.fields['meal'].queryset = meal_registration.meals.all()
-        self.fields['meal'].widget = forms.RadioSelect()

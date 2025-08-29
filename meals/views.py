@@ -7,7 +7,7 @@ from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm
 from django.core.mail import send_mail
 from django.conf import settings
 from django.utils import timezone
-from .forms import UserParentRegistrationForm, MealChoiceForm
+from .forms import UserParentRegistrationForm, MealChoiceForm, ChildRegistrationForm
 from .models import Parent, Child, MealRegistration, MealChoice
 
 # Create your views here.
@@ -157,3 +157,20 @@ def delete_meal_choice(request, choice_id):
     else:
         messages.error(request, 'Cannot delete past meal choices.')
     return redirect('meal_choice_history')
+
+
+def add_child(request):
+    if not request.user.is_authenticated:
+        return redirect('login')
+    parent = Parent.objects.get(user=request.user)
+    if request.method == 'POST':
+        form = ChildRegistrationForm(request.POST)
+        if form.is_valid():
+            child = form.save(commit=False)
+            child.parent = parent
+            child.save()
+            messages.success(request, 'Child added successfully.')
+            return redirect('meal_ordering')
+    else:
+        form = ChildRegistrationForm()
+    return render(request, 'meals/add_child.html', {'form': form})
