@@ -6,7 +6,7 @@ from .models import Meal, MealRegistration
 
 @admin.register(Meal)
 class MealAdmin(admin.ModelAdmin):
-	list_display = ('name', 'description')
+    list_display = ('name', 'description')
 
 
 @admin.register(MealRegistration)

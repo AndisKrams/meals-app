@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Meal Choices History</h2>
+<table>
+    <tr>
+        <th>Date</th>
+        <th>Child</th>
+        <th>Meal</th>
+        <th>Actions</th>
+    </tr>
+    {% for choice in choices %}
+    <tr>
+        <td>{{ choice.meal_registration.date }}</td>
+        <td>{{ choice.child.first_name }} {{ choice.child.last_name }}</td>
+        <td>{{ choice.meal.name }}</td>
+        <td>
+            {% if choice.meal_registration.date > today %}
+                <a href="{% url 'edit_meal_choice' choice.id %}">Edit</a>
+                <a href="{% url 'delete_meal_choice' choice.id %}">Delete</a>
+            {% else %}
+                <span>Locked</span>
+            {% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

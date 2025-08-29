@@ -16,16 +16,27 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from meals.views import meals
+from meals import views
 from django.contrib.auth import views as auth_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path("accounts/", include("allauth.urls")),
+    path('register/', views.register_parent, name='register_parent'),
+    path('history/', views.meal_choice_history, name='meal_choice_history'),
+    path(
+        'edit-choice/<int:choice_id>/',
+        views.edit_meal_choice,
+        name='edit_meal_choice'
+    ),
+    path(
+        'delete-choice/<int:choice_id>/',
+        views.delete_meal_choice,
+        name='delete_meal_choice'
+    ),
+    path('password-reset/', auth_views.PasswordResetView.as_view(template_name='meals/password_reset.html'), name='password_reset'),
+    path('password-reset/done/', auth_views.PasswordResetDoneView.as_view(template_name='meals/password_reset_done.html'), name='password_reset_done'),
+    path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(template_name='meals/password_reset_confirm.html'), name='password_reset_confirm'),
+    path('reset/done/', auth_views.PasswordResetCompleteView.as_view(template_name='meals/password_reset_complete.html'), name='password_reset_complete'),
     path('meals/', include('meals.urls')),
-    # Django built-in password reset views
-    path('password-reset/', auth_views.PasswordResetView.as_view(), name='password_reset'),
-    path('password-reset/done/', auth_views.PasswordResetDoneView.as_view(), name='password_reset_done'),
-    path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
-    path('reset/done/', auth_views.PasswordResetCompleteView.as_view(), name='password_reset_complete'),
 ]

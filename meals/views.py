@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
 from django.http import HttpResponse
 from django.contrib import messages
 from django.contrib.auth import authenticate, login
@@ -6,15 +7,10 @@ from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm
 from django.core.mail import send_mail
 from django.conf import settings
 from django.utils import timezone
-from datetime import timedelta
 from .forms import UserParentRegistrationForm, MealChoiceForm
 from .models import Parent, Child, MealRegistration, MealChoice
 
 # Create your views here.
-
-
-def meals(request):
-    return HttpResponse("Welcome to the Meals App!")
 
 
 def register_parent(request):
@@ -35,7 +31,7 @@ def user_login(request):
         if form.is_valid():
             user = form.get_user()
             login(request, user)
-            return redirect('meals')
+            return redirect('meal_ordering')  # Redirect to meal ordering page
     else:
         form = AuthenticationForm()
     return render(request, 'meals/login.html', {'form': form})
@@ -106,3 +102,58 @@ def meal_ordering(request):
         'available_dates': available_dates,
         'children': children,
     })
+
+
+def meal_choice_history(request):
+    if not request.user.is_authenticated:
+        return redirect('login')
+    parent = get_object_or_404(Parent, user=request.user)
+    children = parent.children.all()
+    choices = (
+        MealChoice.objects
+        .filter(child__in=children)
+        .select_related('meal_registration', 'meal', 'child')
+        .order_by('-meal_registration__date')
+    )
+    today = timezone.now().date()
+    return render(request, 'meals/meal_choice_history.html', {
+        'choices': choices,
+        'today': today,
+    })
+
+
+def edit_meal_choice(request, choice_id):
+    if not request.user.is_authenticated:
+        return redirect('login')
+    choice = get_object_or_404(MealChoice, id=choice_id, child__parent__user=request.user)
+    meal_registration = choice.meal_registration
+    if request.method == 'POST':
+        form = MealChoiceForm(request.POST, meal_registration=meal_registration, prefix=str(choice.child.id))
+        if form.is_valid():
+            choice.meal = form.cleaned_data['meal']
+            choice.save()
+            messages.success(request, 'Meal choice updated.')
+            return redirect('meal_choice_history')
+    else:
+        form = MealChoiceForm(
+            initial={'meal': choice.meal},
+            meal_registration=meal_registration,
+            prefix=str(choice.child.id)
+        )
+    return render(request, 'meals/edit_meal_choice.html', {
+        'form': form,
+        'choice': choice,
+        'meal_registration': meal_registration,
+    })
+
+
+def delete_meal_choice(request, choice_id):
+    if not request.user.is_authenticated:
+        return redirect('login')
+    choice = get_object_or_404(MealChoice, id=choice_id, child__parent__user=request.user)
+    if choice.meal_registration.date > timezone.now().date():
+        choice.delete()
+        messages.success(request, 'Meal choice deleted.')
+    else:
+        messages.error(request, 'Cannot delete past meal choices.')
+    return redirect('meal_choice_history')

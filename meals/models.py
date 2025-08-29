@@ -57,4 +57,3 @@ class MealChoice(models.Model):
 
     def __str__(self):
         return f"{self.child} - {self.meal} on {self.meal_registration.date}"
-

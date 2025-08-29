@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Edit Meal Choice for {{ choice.child.first_name }} {{ choice.child.last_name }} on {{ meal_registration.date }}</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Save</button>
+    <a href="{% url 'meal_choice_history' %}">Cancel</a>
+</form>
+{% endblock %}
