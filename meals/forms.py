@@ -32,7 +32,7 @@ class UserParentRegistrationForm(forms.ModelForm):
 class ChildRegistrationForm(forms.ModelForm):
     class Meta:
         model = Child
-        fields = ['first_name', 'last_name', 'year_group', 'class_name']
+        fields = ['first_name', 'last_name', 'year_group']
 
 
 class MealChoiceForm(forms.ModelForm):
