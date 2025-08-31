@@ -16,13 +16,12 @@ class Child(models.Model):
         on_delete=models.CASCADE,
         related_name='children'
     )
-    first_name = models.CharField(max_length=100)
-    last_name = models.CharField(max_length=100)
+    first_name = models.CharField(max_length=30)
+    last_name = models.CharField(max_length=30)
     year_group = models.IntegerField()
-    class_name = models.CharField(max_length=50)
 
     def __str__(self):
-        return f"{self.first_name} {self.last_name} ({self.class_name})"
+        return f"{self.first_name} {self.last_name} ({self.year_group})"
 
 
 class Meal(models.Model):
