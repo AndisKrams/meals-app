@@ -5,7 +5,7 @@
     <label for="date">Select date:</label>
     <select name="date" id="date" onchange="this.form.submit()">
       {% for date in available_dates %}
-        <option value="{{ date }}" {% if date == selected_date %}selected{% endif %}>{{ date }}</option>
+        <option value="{{ date|date:'Y-m-d' }}" {% if date|date:'Y-m-d' == selected_date %}selected{% endif %}>{{ date|date:'M j, Y' }}</option>
       {% endfor %}
     </select>
   </form>

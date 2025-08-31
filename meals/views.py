@@ -53,11 +53,21 @@ def password_reset_request(request):
     return render(request, "meals/password_reset.html", {"form": form})
 
 
+def get_or_create_parent(user):
+    parent, created = Parent.objects.get_or_create(
+        user=user, defaults={"full_name": user.get_full_name() or user.username}
+    )
+    return parent
+
+
 def meal_ordering(request):
     if not request.user.is_authenticated:
         return redirect("login")
-    parent = Parent.objects.get(user=request.user)
+    parent = get_or_create_parent(request.user)
     children = parent.children.all()
+    if not children.exists():
+        messages.info(request, "You have no registered children. Please add a child first.")
+        return redirect("add_child")
     available_dates = MealRegistration.objects.order_by("date").values_list(
         "date", flat=True
     )
@@ -124,7 +134,16 @@ def meal_ordering(request):
         if all_valid:
             for msg in success_messages:
                 messages.success(request, msg)
-            return redirect("meal_ordering")  # Redirect to show messages
+            # Find the next available date without choices for any child
+            next_date = None
+            for date in available_dates:
+                if not MealChoice.objects.filter(child__in=children, meal_registration__date=date).exists():
+                    next_date = str(date)
+                    break
+            if next_date:
+                return redirect(f"{request.path}?date={next_date}")
+            else:
+                return redirect("meal_ordering")
     return render(
         request,
         "meals/meal_ordering.html",
@@ -210,7 +229,7 @@ def delete_meal_choice(request, choice_id):
 def add_child(request):
     if not request.user.is_authenticated:
         return redirect("login")
-    parent = Parent.objects.get(user=request.user)
+    parent = get_or_create_parent(request.user)
     if request.method == "POST":
         form = ChildRegistrationForm(request.POST)
         if form.is_valid():
