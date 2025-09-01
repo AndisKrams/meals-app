@@ -1,0 +1,60 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+  <h1>{{ title }}</h1>
+
+  <form method="get" action="{% url 'admin:meals-for-day' %}">
+    <label for="date">Date:</label>
+    <select id="date" name="date">
+      {% for d in available_dates %}
+        <option value="{{ d|date:'Y-m-d' }}" {% if d == date %}selected{% endif %}>{{ d|date:'Y-m-d' }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit">Go</button>
+  </form>
+
+  {% if meals %}
+    <h2>Meal Choice Totals</h2>
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th>Meal Choice</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for total in meal_totals %}
+        <tr>
+          <td>{{ total.meal__name }}</td>
+          <td>{{ total.total }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <h2>Individual Meal Choices</h2>
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th>Year Group</th>
+          <th>Last Name</th>
+          <th>First Name</th>
+          <th>Meal Choice</th>
+          <th>Meal Registration Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for meal in meals %}
+        <tr>
+          <td>{{ meal.child.year_group }}</td>
+          <td>{{ meal.child.last_name }}</td>
+          <td>{{ meal.child.first_name }}</td>
+          <td>{{ meal.meal.name }}</td>
+          <td>{{ meal.meal_registration.date }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No meal choices available for the selected date.</p>
+  {% endif %}
+{% endblock %}
