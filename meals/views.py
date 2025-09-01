@@ -1,14 +1,10 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.http import HttpResponse
-from django.contrib import messages
-from django.contrib.auth import authenticate, login
 from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm
-from django.core.mail import send_mail
-from django.conf import settings
+from django.contrib.auth import login
 from django.utils import timezone
 from .forms import UserParentRegistrationForm, MealChoiceForm, ChildRegistrationForm
-from .models import Parent, Child, MealRegistration, MealChoice
+from .models import Parent, MealRegistration, MealChoice
 
 # Create your views here.
 
@@ -41,9 +37,12 @@ def password_reset_request(request):
     if request.method == "POST":
         form = PasswordResetForm(request.POST)
         if form.is_valid():
-            email = form.cleaned_data["email"]
             # Django's built-in password reset will handle sending email and link
-            # This is a placeholder for integration with Django's password reset views
+            form.save(
+                request=request,
+                email_template_name='meals/password_reset_email.html',
+                subject_template_name='meals/password_reset_subject.txt',
+            )
             messages.success(
                 request, "Password reset instructions have been sent to your email."
             )

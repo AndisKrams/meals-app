@@ -1,0 +1,19 @@
+table {
+    border-collapse: separate;
+    border-spacing: 0 12px; /* vertical gap between rows */
+    width: 100%;
+    max-width: 900px;;
+}
+
+th, td {
+    padding: 16px 12px; /* increase cell padding */
+    vertical-align: middle;
+}
+
+tr {
+    margin-bottom: 12px;
+}
+
+a {
+    margin-right: 5px;
+}
