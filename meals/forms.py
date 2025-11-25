@@ -33,6 +33,11 @@ class ChildRegistrationForm(forms.ModelForm):
     class Meta:
         model = Child
         fields = ['first_name', 'last_name', 'year_group']
+        widgets = {
+            'first_name': forms.TextInput(attrs={'class': 'form-control', 'aria-required': 'true'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control', 'aria-required': 'true'}),
+            'year_group': forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'max': '6', 'aria-required': 'true'}),
+        }
 
 
 class MealChoiceForm(forms.ModelForm):
