@@ -1,59 +1,70 @@
 {% load static %}
-
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>School Meals App</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
-        integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
-        crossorigin="anonymous"></script>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">    
+        crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 
 <body>
-    <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4" role="navigation" aria-label="Main navigation">
         <div class="container-fluid">
             <a class="navbar-brand" href="{% url 'meal_ordering' %}">Meals App</a>
-            <div class="collapse navbar-collapse">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
+                aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="mainNav">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     {% if user.is_authenticated %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'add_child' %}">Add Child</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'meal_ordering' %}">Choose Meal</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'meal_choice_history' %}">History</a>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'add_child' %}">Add Child</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'child_list' %}">My Children</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'meal_ordering' %}">Choose Meal</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'meal_choice_history' %}">History</a></li>
+                    {% if user.is_staff %}
+                    <li class="nav-item"><a class="nav-link" href="{% url 'admin_meal_orders' %}">Admin: Orders</a>
                     </li>
                     {% endif %}
+                    {% endif %}
                 </ul>
-                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                <ul class="navbar-nav ms-auto">
                     {% if user.is_authenticated %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'logout' %}">Sign Out</a>
-                    </li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'logout' %}">Sign Out</a></li>
                     {% else %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'login' %}">Sign In</a>
-                    </li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Sign In</a></li>
                     {% endif %}
                 </ul>
             </div>
         </div>
     </nav>
-    <div class="container">
+
+    <div class="container" id="content">
+        <!-- accessible live region for messages -->
+        <div aria-live="polite" aria-atomic="true" class="visually-hidden" id="live-messages">
+            {% for message in messages %}
+            {{ message }}
+            {% endfor %}
+        </div>
+
         {% if messages %}
-        {% for message in messages %}
-        <div class="alert alert-info">{{ message }}</div>
-        {% endfor %}
+        <div class="mb-3" role="status">
+            {% for message in messages %}
+            <div class="alert {% if message.tags %}alert-{{ message.tags }}{% else %}alert-info{% endif %}" role="alert">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
         {% endif %}
+
         {% block content %}{% endblock %}
     </div>
+
 </body>
 
 </html>
