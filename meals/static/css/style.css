@@ -1,14 +1,27 @@
 table {
     border-collapse: separate;
-    border-spacing: 0 12px; /* vertical gap between rows */
+    border-spacing: 0 12px;
     width: 100%;
 }
 
 th, td {
-    padding: 16px 12px; /* increase cell padding */
+    padding: 12px 16px;
     vertical-align: middle;
 }
 
 tr {
-    margin-bottom: 12px;
+    background: #fff;
+}
+
+a:focus, button:focus, input:focus {
+    outline: 3px solid #7aa7ff;
+    outline-offset: 2px;
+}
+
+.visually-hidden {
+    position: absolute !important;
+    height: 1px; width: 1px;
+    overflow: hidden;
+    clip: rect(1px, 1px, 1px, 1px);
+    white-space: nowrap;
 }
