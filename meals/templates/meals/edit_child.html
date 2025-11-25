@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>Edit child: {{ child.first_name }} {{ child.last_name }}</h1>
+<form method="post" novalidate>
+  {% csrf_token %}
+  {{ form.non_field_errors }}
+  <div class="mb-3">
+    <label class="form-label">First name</label>
+    {{ form.first_name|as_widget(attrs={'class': 'form-control'}) }}
+    {{ form.first_name.errors }}
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Last name</label>
+    {{ form.last_name|as_widget(attrs={'class': 'form-control'}) }}
+    {{ form.last_name.errors }}
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Year group</label>
+    {{ form.year_group|as_widget(attrs={'class': 'form-control', 'type':'number'}) }}
+    {{ form.year_group.errors }}
+  </div>
+  <button class="btn btn-primary" type="submit">Save</button>
+  <a class="btn btn-link" href="{% url 'child_list' %}">Cancel</a>
+</form>
+{% endblock %}

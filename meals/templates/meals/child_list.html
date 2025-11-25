@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>My Children</h1>
+<a class="btn btn-primary mb-3" href="{% url 'add_child' %}">Add child</a>
+{% if children %}
+  <table class="table table-striped table-responsive" role="table" aria-label="My children">
+    <caption class="visually-hidden">List of registered children</caption>
+    <thead>
+      <tr>
+        <th scope="col">Year</th>
+        <th scope="col">Last name</th>
+        <th scope="col">First name</th>
+        <th scope="col">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for child in children %}
+      <tr>
+        <td>{{ child.year_group }}</td>
+        <td>{{ child.last_name }}</td>
+        <td>{{ child.first_name }}</td>
+        <td>
+          <a class="btn btn-sm btn-outline-secondary" href="{% url 'edit_child' child.id %}">Edit</a>
+          <a class="btn btn-sm btn-outline-danger" href="{% url 'delete_child' child.id %}">Delete</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <p>You have no registered children. <a href="{% url 'add_child' %}">Add one now</a>.</p>
+{% endif %}
+{% endblock %}
