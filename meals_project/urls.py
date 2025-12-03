@@ -24,6 +24,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path("accounts/", include("allauth.urls")),
     path('meals-for-day/', admin.site.admin_view(MealChoiceAdmin(MealChoice, admin_site=admin.site).meals_for_day), name='meals-for-day'),
-    path('meals/', include('meals.urls')),
+    path('', include('meals.urls')),
     path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
 ]
