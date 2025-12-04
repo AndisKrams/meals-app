@@ -1,3 +1,15 @@
+:root{
+  --accent:#0d6efd;
+  --focus: #ffbf47;
+  --bg:#ffffff;
+  --text:#1b1b1b;
+}
+
+
+/* keyboard focus */
+:focus{outline:3px solid var(--accent);outline-offset:3px}
+
+/* table spacing and responsive */
 table {
     border-collapse: separate;
     border-spacing: 0 12px; /* vertical gap between rows */
@@ -17,3 +29,13 @@ tr {
 a {
     margin-right: 5px;
 }
+
+@media (max-width:768px){
+  table, thead, tbody, th, td, tr{display:block}
+  th{display:none}
+  td{border:0;padding:.6rem 1rem}
+  tbody tr{margin-bottom:12px}
+}
+
+/* improve color contrast for alerts and buttons if needed */
+.btn-primary{background:var(--accent);border-color:var(--accent)}
