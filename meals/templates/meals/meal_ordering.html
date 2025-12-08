@@ -5,24 +5,31 @@
   <label for="date" class="form-label">Select date:</label>
   <select name="date" id="date" class="form-select" onchange="this.form.submit()">
     {% for date in available_dates %}
-    <option value="{{ date|date:'Y-m-d' }}" {% if date|date:'Y-m-d'==selected_date %}selected{% endif %}>{{ date|date:'M
-      j, Y' }}</option>
+      {% with formatted_date=date|date:'Y-m-d' %}
+        <option value="{{ formatted_date }}" {% if formatted_date == selected_date %}selected{% endif %}>
+          {{ date|date:'M j, Y' }}
+        </option>
+      {% endwith %}
     {% endfor %}
   </select>
 </form>
 
 {% if meal_registration %}
-<form method="post" novalidate>
-  {% csrf_token %}
-  {% for child, form in forms %}
-  <fieldset class="mb-3" aria-labelledby="legend-child-{{ child.id }}">
-    <legend id="legend-child-{{ child.id }}">{{ child.first_name }} {{ child.last_name }}</legend>
-    {{ form.meal }} <!-- ensure widget=RadioSelect in form -->
-  </fieldset>
-  {% endfor %}
-  <button class="btn btn-success" type="submit">Save choices</button>
-</form>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% for child, form in forms %}
+      <fieldset class="mb-3" aria-labelledby="legend-child-{{ child.id }}">
+        <legend id="legend-child-{{ child.id }}">{{ child.first_name }} {{ child.last_name }} — Year {{ child.year_group }}</legend>
+        {% if form.non_field_errors %}
+          <div class="alert alert-danger" role="alert">{{ form.non_field_errors }}</div>
+        {% endif %}
+        {{ form.meal.errors }}
+        {{ form.meal }}
+      </fieldset>
+    {% endfor %}
+    <button class="btn btn-success" type="submit">Save choices</button>
+  </form>
 {% else %}
-<p>No meals registered for this date.</p>
+  <p>No meals registered for this date.</p>
 {% endif %}
 {% endblock %}
