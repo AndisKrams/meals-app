@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.models import User
-from .models import Parent, Child, MealChoice
+from .models import Parent, Child, MealChoice, Meal, MealRegistration
 
 
 class UserParentRegistrationForm(forms.ModelForm):
@@ -10,7 +10,17 @@ class UserParentRegistrationForm(forms.ModelForm):
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'full_name', 'password', 'password2']
+        fields = ['username', 'email']
+        widgets = {
+            'username': forms.TextInput(attrs={'class': 'form-control', 'autofocus': True}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['full_name'].widget.attrs.update({'class': 'form-control'})
+        self.fields['password'].widget.attrs.update({'class': 'form-control'})
+        self.fields['password2'].widget.attrs.update({'class': 'form-control'})
 
     def clean(self):
         cleaned_data = super().clean()
@@ -34,9 +44,9 @@ class ChildRegistrationForm(forms.ModelForm):
         model = Child
         fields = ['first_name', 'last_name', 'year_group']
         widgets = {
-            'first_name': forms.TextInput(attrs={'class': 'form-control', 'aria-required': 'true'}),
-            'last_name': forms.TextInput(attrs={'class': 'form-control', 'aria-required': 'true'}),
-            'year_group': forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'max': '6', 'aria-required': 'true'}),
+            'first_name': forms.TextInput(attrs={'class': 'form-control', 'autofocus': True}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'year_group': forms.NumberInput(attrs={'class': 'form-control', 'min': '0'}),
         }
 
 
@@ -45,7 +55,7 @@ class MealChoiceForm(forms.ModelForm):
         model = MealChoice
         fields = ['meal']
         widgets = {
-            'meal': forms.RadioSelect
+            'meal': forms.RadioSelect(attrs={'autofocus': True})
         }
 
     def __init__(self, *args, **kwargs):
