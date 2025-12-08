@@ -9,8 +9,6 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.admin.views.decorators import staff_member_required
 
-# Create your views here.
-
 
 def register_parent(request):
     if request.method == "POST":
@@ -43,8 +41,8 @@ def password_reset_request(request):
             # Django's built-in password reset will handle sending email and link
             form.save(
                 request=request,
-                email_template_name='meals/password_reset_email.html',
-                subject_template_name='meals/password_reset_subject.txt',
+                email_template_name="meals/password_reset_email.html",
+                subject_template_name="meals/password_reset_subject.txt",
             )
             messages.success(
                 request, "Password reset instructions have been sent to your email."
@@ -57,62 +55,67 @@ def password_reset_request(request):
 
 def get_or_create_parent(user):
     parent, created = Parent.objects.get_or_create(
-        user=user,
-        defaults={'full_name': user.get_full_name() or user.username}
+        user=user, defaults={"full_name": user.get_full_name() or user.username}
     )
     return parent
+
 
 @login_required
 def child_list(request):
     parent = get_or_create_parent(request.user)
-    children = parent.children.all().order_by('year_group', 'last_name')
-    return render(request, 'meals/child_list.html', {'children': children})
+    children = parent.children.all().order_by("year_group", "last_name")
+    return render(request, "meals/child_list.html", {"children": children})
+
 
 @login_required
 def add_child(request):
     parent = get_or_create_parent(request.user)
-    if request.method == 'POST':
+    if request.method == "POST":
         form = ChildRegistrationForm(request.POST)
         if form.is_valid():
             try:
                 child = form.save(commit=False)
                 child.parent = parent
                 child.save()
-                messages.success(request, f"Child {child.first_name} {child.last_name} added.")
-                return redirect('child_list')
+                messages.success(
+                    request, f"Child {child.first_name} {child.last_name} added."
+                )
+                return redirect("child_list")
             except Exception as e:
                 messages.error(request, "Could not save child. Please try again.")
         else:
             messages.error(request, "Please correct the errors below.")
     else:
         form = ChildRegistrationForm()
-    return render(request, 'meals/add_child.html', {'form': form})
+    return render(request, "meals/add_child.html", {"form": form})
+
 
 @login_required
 def edit_child(request, child_id):
     parent = get_or_create_parent(request.user)
     child = get_object_or_404(parent.children, id=child_id)
-    if request.method == 'POST':
+    if request.method == "POST":
         form = ChildRegistrationForm(request.POST, instance=child)
         if form.is_valid():
             form.save()
             messages.success(request, "Child updated.")
-            return redirect('child_list')
+            return redirect("child_list")
         else:
             messages.error(request, "Please correct the errors below.")
     else:
         form = ChildRegistrationForm(instance=child)
-    return render(request, 'meals/edit_child.html', {'form': form, 'child': child})
+    return render(request, "meals/edit_child.html", {"form": form, "child": child})
+
 
 @login_required
 def delete_child(request, child_id):
     parent = get_or_create_parent(request.user)
     child = get_object_or_404(parent.children, id=child_id)
-    if request.method == 'POST':
+    if request.method == "POST":
         child.delete()
         messages.success(request, "Child deleted.")
-        return redirect('child_list')
-    return render(request, 'meals/confirm_delete_child.html', {'child': child})
+        return redirect("child_list")
+    return render(request, "meals/confirm_delete_child.html", {"child": child})
 
 
 def meal_ordering(request):
@@ -121,7 +124,9 @@ def meal_ordering(request):
     parent = get_or_create_parent(request.user)
     children = parent.children.all()
     if not children.exists():
-        messages.info(request, "You have no registered children. Please add a child first.")
+        messages.info(
+            request, "You have no registered children. Please add a child first."
+        )
         return redirect("add_child")
     available_dates = MealRegistration.objects.order_by("date").values_list(
         "date", flat=True
@@ -192,7 +197,9 @@ def meal_ordering(request):
             # Find the next available date without choices for any child
             next_date = None
             for date in available_dates:
-                if not MealChoice.objects.filter(child__in=children, meal_registration__date=date).exists():
+                if not MealChoice.objects.filter(
+                    child__in=children, meal_registration__date=date
+                ).exists():
                     next_date = str(date)
                     break
             if next_date:
@@ -282,32 +289,41 @@ def delete_meal_choice(request, choice_id):
 
 
 def admin_meal_orders(request):
-    dates = MealRegistration.objects.order_by('date').values_list('date', flat=True)
-    selected_date = request.GET.get('date')
+    dates = MealRegistration.objects.order_by("date").values_list("date", flat=True)
+    selected_date = request.GET.get("date")
     if not selected_date and dates:
         selected_date = str(dates[0])
-    meal_registration = MealRegistration.objects.filter(date=selected_date).first() if selected_date else None
+    meal_registration = (
+        MealRegistration.objects.filter(date=selected_date).first()
+        if selected_date
+        else None
+    )
 
     choices = []
     totals = {}
     if meal_registration:
         meal_choices = (
-            MealChoice.objects
-            .filter(meal_registration=meal_registration)
-            .select_related('child', 'meal')
-            .order_by('child__year_group', 'child__last_name')
+            MealChoice.objects.filter(meal_registration=meal_registration)
+            .select_related("child", "meal")
+            .order_by("child__year_group", "child__last_name")
         )
         choices = list(meal_choices)
         from collections import Counter
+
         totals = Counter(choice.meal.name for choice in choices)
 
-    return render(request, 'meals/admin_meal_orders.html', {
-        'dates': dates,
-        'selected_date': selected_date,
-        'choices': choices,
-        'totals': totals,
-        'meal_registration': meal_registration,
-    })
+    return render(
+        request,
+        "meals/admin_meal_orders.html",
+        {
+            "dates": dates,
+            "selected_date": selected_date,
+            "choices": choices,
+            "totals": totals,
+            "meal_registration": meal_registration,
+        },
+    )
+
 
 def user_logout(request):
     """
@@ -315,4 +331,4 @@ def user_logout(request):
     """
     logout(request)
     messages.info(request, "You have been signed out.")
-    return redirect('login')
+    return redirect("login")
