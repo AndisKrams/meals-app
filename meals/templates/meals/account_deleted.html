@@ -1,0 +1,6 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>Account deleted</h1>
+<p>Your account{% if username %} ({{ username }}){% endif %} and all related data have been removed.</p>
+<p><a class="btn btn-primary" href="{% url 'login' %}">Return to sign in</a></p>
+{% endblock %}

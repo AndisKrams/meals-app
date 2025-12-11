@@ -332,3 +332,18 @@ def user_logout(request):
     logout(request)
     messages.info(request, "You have been signed out.")
     return redirect("login")
+
+
+@login_required
+def delete_account(request):
+    if request.method == "POST":
+        user = request.user
+        username = user.username
+        logout(request)
+        user.delete()
+        return render(
+            request,
+            "meals/account_deleted.html",
+            {"username": username},
+        )
+    return render(request, "meals/confirm_delete_account.html")
