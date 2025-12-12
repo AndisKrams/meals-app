@@ -1,23 +1,42 @@
 from django.contrib import admin
+from django.contrib.admin import AdminSite
 from django.db.models import Count
 from django.urls import path
 from django.template.response import TemplateResponse
 from datetime import datetime
-from .models import Meal, MealRegistration, MealChoice
+from .models import Meal, MealRegistration, MealChoice, Parent, Child
 
 
-@admin.register(Meal)
+class MealsAdminSite(AdminSite):
+    site_header = 'School Meals Administration'
+    site_title = 'Meals Admin'
+    index_title = 'Welcome to School Meals Admin'
+
+    def get_urls(self):
+        from django.urls import path
+        from django.contrib.auth import views as auth_views
+        urls = super().get_urls()
+        # Override the logout URL to redirect to admin login
+        custom_urls = [
+            path('logout/', auth_views.LogoutView.as_view(next_page='/admin/login/'), name='logout'),
+        ]
+        # Put custom URL before default ones so it takes precedence
+        return custom_urls + urls
+
+
+# Create the custom admin site instance
+admin_site = MealsAdminSite(name='admin')
+
+
 class MealAdmin(admin.ModelAdmin):
     list_display = ('name', 'description')
 
 
-@admin.register(MealRegistration)
 class MealRegistrationAdmin(admin.ModelAdmin):
     list_display = ('date',)
     filter_horizontal = ('meals',)
 
 
-@admin.register(MealChoice)
 class MealChoiceAdmin(admin.ModelAdmin):
     list_display = ('child', 'meal', 'meal_registration')
     list_filter = ('child__year_group', 'meal', 'meal_registration__date')
@@ -60,3 +79,22 @@ class MealChoiceAdmin(admin.ModelAdmin):
         }
 
         return TemplateResponse(request, 'admin/meals_for_day.html', context)
+
+
+class ParentAdmin(admin.ModelAdmin):
+    list_display = ('full_name', 'user')
+    search_fields = ('full_name', 'user__username')
+
+
+class ChildAdmin(admin.ModelAdmin):
+    list_display = ('first_name', 'last_name', 'year_group', 'parent')
+    list_filter = ('year_group',)
+    search_fields = ('first_name', 'last_name', 'parent__full_name')
+
+
+# Register models with the custom admin site
+admin_site.register(Meal, MealAdmin)
+admin_site.register(MealRegistration, MealRegistrationAdmin)
+admin_site.register(MealChoice, MealChoiceAdmin)
+admin_site.register(Parent, ParentAdmin)
+admin_site.register(Child, ChildAdmin)

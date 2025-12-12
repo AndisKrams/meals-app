@@ -17,13 +17,11 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from django.contrib.auth import views as auth_views
-from meals.admin import MealChoiceAdmin
-from meals.models import MealChoice
+from meals.admin import admin_site
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('admin/', admin_site.urls),
     path("accounts/", include("allauth.urls")),
-    path('meals-for-day/', admin.site.admin_view(MealChoiceAdmin(MealChoice, admin_site=admin.site).meals_for_day), name='meals-for-day'),
     path('meals/', include('meals.urls')),
     path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
 ]

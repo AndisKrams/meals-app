@@ -328,9 +328,13 @@ def admin_meal_orders(request):
 def user_logout(request):
     """
     Log out the current user and redirect to the login page with a message.
+    Staff users are redirected to the admin login page.
     """
+    is_staff = request.user.is_staff
     logout(request)
     messages.info(request, "You have been signed out.")
+    if is_staff:
+        return redirect("admin:login")
     return redirect("login")
 
 
