@@ -1,0 +1,23 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Server Error - School Meals App</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <div class="container">
+        <div class="text-center mt-5">
+            <h1 class="display-1 text-danger">500</h1>
+            <h2>Server Error</h2>
+            <p class="lead">Something went wrong on our end. We've been notified and are working to fix it.</p>
+            <div class="mt-4">
+                <a href="/" class="btn btn-primary">Go to Home</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
