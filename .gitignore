@@ -3,3 +3,7 @@ env.py
 __pycache__
 env/
 *.pyc
+logs/
+*.log
+db.sqlite3
+staticfiles/
