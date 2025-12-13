@@ -21,6 +21,10 @@ if os.path.isfile('env.py'):
 BASE_DIR = Path(__file__).resolve().parent.parent
 TEMPLATE_DIR = os.path.join(BASE_DIR, 'templates')
 
+# Ensure logs directory exists
+LOGS_DIR = BASE_DIR / 'logs'
+LOGS_DIR.mkdir(exist_ok=True)
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
@@ -99,6 +103,9 @@ DATABASES = {}
 DATABASE_URL = os.environ.get("DATABASE_URL")
 if DATABASE_URL:
     DATABASES['default'] = dj_database_url.parse(DATABASE_URL)
+    # Disable persistent connections during collectstatic
+    if 'DYNO' in os.environ and not DEBUG:
+        DATABASES['default']['CONN_MAX_AGE'] = 0
 else:
     # fallback to local sqlite for development
     DATABASES['default'] = {
@@ -145,8 +152,16 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
-STATICFILES_DIRS = [BASE_DIR / 'static']
+
+# Only include static dirs that exist
+STATICFILES_DIRS = []
+if (BASE_DIR / 'static').exists():
+    STATICFILES_DIRS.append(BASE_DIR / 'static')
+
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Whitenoise configuration for serving static files
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
@@ -171,27 +186,33 @@ LOGGING = {
             'class': 'logging.StreamHandler',
             'formatter': 'verbose',
         },
-        'file': {
-            'class': 'logging.FileHandler',
-            'filename': BASE_DIR / 'logs' / 'django.log',
-            'formatter': 'verbose',
-        },
     },
     'loggers': {
         'django': {
-            'handlers': ['console', 'file'],
+            'handlers': ['console'],
             'level': 'INFO',
             'propagate': False,
         },
         'meals': {
-            'handlers': ['console', 'file'],
+            'handlers': ['console'],
             'level': 'DEBUG' if DEBUG else 'INFO',
             'propagate': False,
         },
     },
 }
 
-# Custom error handlers
-HANDLER404 = 'meals.views.custom_404'
-HANDLER500 = 'meals.views.custom_500'
-HANDLER403 = 'meals.views.custom_403'
+# Add file logging only in development
+if DEBUG and LOGS_DIR.exists():
+    LOGGING['handlers']['file'] = {
+        'class': 'logging.FileHandler',
+        'filename': LOGS_DIR / 'django.log',
+        'formatter': 'verbose',
+    }
+    LOGGING['loggers']['django']['handlers'].append('file')
+    LOGGING['loggers']['meals']['handlers'].append('file')
+
+# Custom error handlers (only in production)
+if not DEBUG:
+    HANDLER404 = 'meals.views.custom_404'
+    HANDLER500 = 'meals.views.custom_500'
+    HANDLER403 = 'meals.views.custom_403'
