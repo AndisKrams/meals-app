@@ -6,17 +6,42 @@ from django.utils import timezone
 from .forms import UserParentRegistrationForm, MealChoiceForm, ChildRegistrationForm
 from .models import Parent, MealRegistration, MealChoice
 from django.contrib.auth.decorators import login_required
-from django.core.exceptions import ObjectDoesNotExist
-from django.contrib.admin.views.decorators import staff_member_required
+from django.db import transaction, IntegrityError
+from django.core.exceptions import ValidationError
+from datetime import datetime
+import logging
+
+logger = logging.getLogger('meals')
+
+
+def validate_date_string(date_str):
+    """Validate and parse date string in YYYY-MM-DD format"""
+    if not date_str:
+        return None
+    try:
+        return datetime.strptime(date_str, '%Y-%m-%d').date()
+    except (ValueError, TypeError) as e:
+        logger.warning(f"Invalid date format: {date_str} - {str(e)}")
+        return None
 
 
 def register_parent(request):
     if request.method == "POST":
         form = UserParentRegistrationForm(request.POST)
         if form.is_valid():
-            form.save()
-            messages.success(request, "Registration successful. You can now log in.")
-            return redirect("login")  # Adjust to your login URL name
+            try:
+                user = form.save()
+                messages.success(request, "Registration successful! You can now log in.")
+                logger.info(f"New parent registered: {user.username}")
+                return redirect("login")
+            except IntegrityError as e:
+                logger.error(f"Database error during registration: {str(e)}")
+                messages.error(request, "Registration failed due to a database error. Please try again.")
+            except Exception as e:
+                logger.error(f"Unexpected error during registration: {str(e)}")
+                messages.error(request, "An unexpected error occurred. Please try again.")
+        else:
+            messages.error(request, "Please correct the errors below.")
     else:
         form = UserParentRegistrationForm()
     return render(request, "meals/register_parent.html", {"form": form})
@@ -68,6 +93,7 @@ def child_list(request):
 
 
 @login_required
+@transaction.atomic
 def add_child(request):
     parent = get_or_create_parent(request.user)
     if request.method == "POST":
@@ -76,13 +102,22 @@ def add_child(request):
             try:
                 child = form.save(commit=False)
                 child.parent = parent
+                child.full_clean()  # Run model validation
                 child.save()
                 messages.success(
-                    request, f"Child {child.first_name} {child.last_name} added."
+                    request, f"Child {child.first_name} {child.last_name} added successfully."
                 )
+                logger.info(f"Child added: {child.id} for parent: {parent.id}")
                 return redirect("child_list")
+            except ValidationError as e:
+                logger.warning(f"Validation error adding child: {str(e)}")
+                messages.error(request, f"Validation error: {str(e)}")
+            except IntegrityError as e:
+                logger.error(f"Database error adding child: {str(e)}")
+                messages.error(request, "A database error occurred. Please try again.")
             except Exception as e:
-                messages.error(request, "Could not save child. Please try again.")
+                logger.error(f"Unexpected error adding child: {str(e)}")
+                messages.error(request, "An unexpected error occurred. Please try again.")
         else:
             messages.error(request, "Please correct the errors below.")
     else:
@@ -91,15 +126,29 @@ def add_child(request):
 
 
 @login_required
+@transaction.atomic
 def edit_child(request, child_id):
     parent = get_or_create_parent(request.user)
     child = get_object_or_404(parent.children, id=child_id)
     if request.method == "POST":
         form = ChildRegistrationForm(request.POST, instance=child)
         if form.is_valid():
-            form.save()
-            messages.success(request, "Child updated.")
-            return redirect("child_list")
+            try:
+                updated_child = form.save(commit=False)
+                updated_child.full_clean()
+                updated_child.save()
+                messages.success(request, f"Child {updated_child.first_name} {updated_child.last_name} updated successfully.")
+                logger.info(f"Child updated: {child.id}")
+                return redirect("child_list")
+            except ValidationError as e:
+                logger.warning(f"Validation error updating child: {str(e)}")
+                messages.error(request, f"Validation error: {str(e)}")
+            except IntegrityError as e:
+                logger.error(f"Database error updating child: {str(e)}")
+                messages.error(request, "A database error occurred. Please try again.")
+            except Exception as e:
+                logger.error(f"Unexpected error updating child: {str(e)}")
+                messages.error(request, "An unexpected error occurred. Please try again.")
         else:
             messages.error(request, "Please correct the errors below.")
     else:
@@ -108,19 +157,25 @@ def edit_child(request, child_id):
 
 
 @login_required
+@transaction.atomic
 def delete_child(request, child_id):
     parent = get_or_create_parent(request.user)
     child = get_object_or_404(parent.children, id=child_id)
     if request.method == "POST":
-        child.delete()
-        messages.success(request, "Child deleted.")
-        return redirect("child_list")
+        try:
+            child_name = f"{child.first_name} {child.last_name}"
+            child.delete()
+            messages.success(request, f"{child_name} has been deleted successfully.")
+            logger.info(f"Child deleted: {child_id} by parent {parent.id}")
+            return redirect("child_list")
+        except Exception as e:
+            logger.error(f"Error deleting child {child_id}: {str(e)}")
+            messages.error(request, "An error occurred while deleting the child. Please try again.")
     return render(request, "meals/confirm_delete_child.html", {"child": child})
 
 
+@login_required
 def meal_ordering(request):
-    if not request.user.is_authenticated:
-        return redirect("login")
     parent = get_or_create_parent(request.user)
     children = parent.children.all()
     if not children.exists():
@@ -128,84 +183,108 @@ def meal_ordering(request):
             request, "You have no registered children. Please add a child first."
         )
         return redirect("add_child")
-    available_dates = MealRegistration.objects.order_by("date").values_list(
-        "date", flat=True
-    )
-    selected_date = request.GET.get("date")
-    if not selected_date:
-        # Find first available date without choices for any child
-        for date in available_dates:
-            if not MealChoice.objects.filter(
-                child__in=children, meal_registration__date=date
-            ).exists():
-                selected_date = str(date)
-                break
-        if not selected_date and available_dates:
-            selected_date = str(available_dates[0])
-    meal_registration = (
-        MealRegistration.objects.filter(date=selected_date).first()
-        if selected_date
-        else None
-    )
-
-    forms = []
-    if meal_registration:
-        for child in children:
-            choice = MealChoice.objects.filter(
-                child=child, meal_registration=meal_registration
-            ).first()
-            initial = {"meal": choice.meal} if choice else {}
-            forms.append(
-                (
-                    child,
-                    MealChoiceForm(
-                        request.POST if request.method == "POST" else None,
-                        initial=initial,
-                        meal_registration=meal_registration,
-                        prefix=str(child.id),
-                    ),
-                )
-            )
-
-    if request.method == "POST" and meal_registration:
-        success_messages = []
-        all_valid = True
-        for child, form in forms:
-            if form.is_valid():
-                meal = form.cleaned_data["meal"]
-                choice, created = MealChoice.objects.get_or_create(
-                    child=child,
-                    meal_registration=meal_registration,
-                    defaults={"meal": meal},
-                )
-                if not created:
-                    choice.meal = meal
-                    choice.save()
-                success_messages.append(
-                    (
-                        (
-                            f"Meal choice for {child.first_name} {child.last_name} "
-                            f"on {meal_registration.date}: {meal.name}"
-                        )
-                    )
-                )
-            else:
-                all_valid = False
-        if all_valid:
-            for msg in success_messages:
-                messages.success(request, msg)
-            # Find the next available date without choices for any child
-            next_date = None
+    
+    try:
+        available_dates = MealRegistration.objects.order_by("date").values_list(
+            "date", flat=True
+        )
+        selected_date_str = request.GET.get("date")
+        selected_date = None
+        
+        if selected_date_str:
+            selected_date = validate_date_string(selected_date_str)
+            if not selected_date:
+                messages.warning(request, "Invalid date format. Showing next available date.")
+        
+        if not selected_date:
+            # Find first available date without choices for any child
             for date in available_dates:
                 if not MealChoice.objects.filter(
                     child__in=children, meal_registration__date=date
                 ).exists():
-                    next_date = str(date)
+                    selected_date = date
                     break
-            if next_date:
-                return redirect(f"{request.path}?date={next_date}")
-            else:
-                return redirect("meal_ordering")
+            if not selected_date and available_dates:
+                selected_date = available_dates[0]
+        
+        meal_registration = (
+            MealRegistration.objects.filter(date=selected_date).first()
+            if selected_date
+            else None
+        )
+
+        forms = []
+        if meal_registration:
+            for child in children:
+                choice = MealChoice.objects.filter(
+                    child=child, meal_registration=meal_registration
+                ).first()
+                initial = {"meal": choice.meal} if choice else {}
+                forms.append(
+                    (
+                        child,
+                        MealChoiceForm(
+                            request.POST if request.method == "POST" else None,
+                            initial=initial,
+                            meal_registration=meal_registration,
+                            prefix=str(child.id),
+                        ),
+                    )
+                )
+
+        if request.method == "POST" and meal_registration:
+            success_messages = []
+            all_valid = True
+            try:
+                with transaction.atomic():
+                    for child, form in forms:
+                        if form.is_valid():
+                            meal = form.cleaned_data["meal"]
+                            choice, created = MealChoice.objects.get_or_create(
+                                child=child,
+                                meal_registration=meal_registration,
+                                defaults={"meal": meal},
+                            )
+                            if not created:
+                                choice.meal = meal
+                                choice.save()
+                            success_messages.append(
+                                (
+                                    (
+                                        f"Meal choice for {child.first_name} {child.last_name} "
+                                        f"on {meal_registration.date}: {meal.name}"
+                                    )
+                                )
+                            )
+                        else:
+                            all_valid = False
+                    
+                    if all_valid:
+                        for msg in success_messages:
+                            messages.success(request, msg)
+                        logger.info(f"Meal choices saved for parent {parent.id}")
+                        # Find the next available date without choices for any child
+                        next_date = None
+                        for date in available_dates:
+                            if not MealChoice.objects.filter(
+                                child__in=children, meal_registration__date=date
+                            ).exists():
+                                next_date = date
+                                break
+                        if next_date:
+                            return redirect(f"{request.path}?date={next_date}")
+                        else:
+                            return redirect("meal_ordering")
+            except IntegrityError as e:
+                logger.error(f"Database error saving meal choices: {str(e)}")
+                messages.error(request, "A database error occurred. Please try again.")
+            except Exception as e:
+                logger.error(f"Unexpected error saving meal choices: {str(e)}")
+                messages.error(request, "An unexpected error occurred. Please try again.")
+    except Exception as e:
+        logger.error(f"Error in meal_ordering view: {str(e)}")
+        messages.error(request, "An error occurred loading meal options. Please try again.")
+        return redirect("child_list")
     return render(
         request,
         "meals/meal_ordering.html",
@@ -218,99 +297,143 @@ def meal_ordering(request):
     )
 
 
+@login_required
 def meal_choice_history(request):
-    if not request.user.is_authenticated:
-        return redirect("login")
-    parent = get_object_or_404(Parent, user=request.user)
-    children = parent.children.all()
-    choices = (
-        MealChoice.objects.filter(child__in=children)
-        .select_related("meal_registration", "meal", "child")
-        .order_by("-meal_registration__date")
-    )
-    today = timezone.now().date()
-    return render(
-        request,
-        "meals/meal_choice_history.html",
-        {
-            "choices": choices,
-            "today": today,
-        },
-    )
+    try:
+        parent = get_object_or_404(Parent, user=request.user)
+        children = parent.children.all()
+        choices = (
+            MealChoice.objects.filter(child__in=children)
+            .select_related("meal_registration", "meal", "child")
+            .order_by("-meal_registration__date")
+        )
+        today = timezone.now().date()
+        return render(
+            request,
+            "meals/meal_choice_history.html",
+            {
+                "choices": choices,
+                "today": today,
+            },
+        )
+    except Exception as e:
+        logger.error(f"Error loading meal choice history: {str(e)}")
+        messages.error(request, "An error occurred loading your meal history.")
+        return redirect("meal_ordering")
 
 
+@login_required
+@transaction.atomic
 def edit_meal_choice(request, choice_id):
-    if not request.user.is_authenticated:
-        return redirect("login")
-    choice = get_object_or_404(
-        MealChoice, id=choice_id, child__parent__user=request.user
-    )
-    meal_registration = choice.meal_registration
-    if request.method == "POST":
-        form = MealChoiceForm(
-            request.POST,
-            meal_registration=meal_registration,
-            prefix=str(choice.child.id),
+    try:
+        choice = get_object_or_404(
+            MealChoice, id=choice_id, child__parent__user=request.user
         )
-        if form.is_valid():
-            choice.meal = form.cleaned_data["meal"]
-            choice.save()
-            messages.success(request, "Meal choice updated.")
+        meal_registration = choice.meal_registration
+        
+        # Check if the meal date hasn't passed
+        if meal_registration.date < timezone.now().date():
+            messages.error(request, "Cannot edit past meal choices.")
             return redirect("meal_choice_history")
-    else:
-        form = MealChoiceForm(
-            initial={"meal": choice.meal},
-            meal_registration=meal_registration,
-            prefix=str(choice.child.id),
+        
+        if request.method == "POST":
+            form = MealChoiceForm(
+                request.POST,
+                meal_registration=meal_registration,
+                prefix=str(choice.child.id),
+            )
+            if form.is_valid():
+                try:
+                    choice.meal = form.cleaned_data["meal"]
+                    choice.save()
+                    messages.success(request, "Meal choice updated successfully.")
+                    logger.info(f"Meal choice {choice_id} updated")
+                    return redirect("meal_choice_history")
+                except Exception as e:
+                    logger.error(f"Error updating meal choice: {str(e)}")
+                    messages.error(request, "An error occurred updating the meal choice.")
+            else:
+                messages.error(request, "Please correct the errors below.")
+        else:
+            form = MealChoiceForm(
+                initial={"meal": choice.meal},
+                meal_registration=meal_registration,
+                prefix=str(choice.child.id),
+            )
+        return render(
+            request,
+            "meals/edit_meal_choice.html",
+            {
+                "form": form,
+                "choice": choice,
+                "meal_registration": meal_registration,
+            },
         )
-    return render(
-        request,
-        "meals/edit_meal_choice.html",
-        {
-            "form": form,
-            "choice": choice,
-            "meal_registration": meal_registration,
-        },
-    )
+    except Exception as e:
+        logger.error(f"Error in edit_meal_choice: {str(e)}")
+        messages.error(request, "An error occurred. Please try again.")
+        return redirect("meal_choice_history")
 
 
+@login_required
+@transaction.atomic
 def delete_meal_choice(request, choice_id):
-    if not request.user.is_authenticated:
-        return redirect("login")
-    choice = get_object_or_404(
-        MealChoice, id=choice_id, child__parent__user=request.user
-    )
-    if choice.meal_registration.date > timezone.now().date():
-        choice.delete()
-        messages.success(request, "Meal choice deleted.")
-    else:
-        messages.error(request, "Cannot delete past meal choices.")
+    try:
+        choice = get_object_or_404(
+            MealChoice, id=choice_id, child__parent__user=request.user
+        )
+        if choice.meal_registration.date > timezone.now().date():
+            choice.delete()
+            messages.success(request, "Meal choice deleted successfully.")
+            logger.info(f"Meal choice {choice_id} deleted")
+        else:
+            messages.error(request, "Cannot delete past meal choices.")
+    except Exception as e:
+        logger.error(f"Error deleting meal choice: {str(e)}")
+        messages.error(request, "An error occurred while deleting the meal choice.")
     return redirect("meal_choice_history")
 
 
 def admin_meal_orders(request):
-    dates = MealRegistration.objects.order_by("date").values_list("date", flat=True)
-    selected_date = request.GET.get("date")
-    if not selected_date and dates:
-        selected_date = str(dates[0])
-    meal_registration = (
-        MealRegistration.objects.filter(date=selected_date).first()
-        if selected_date
-        else None
-    )
-
-    choices = []
-    totals = {}
-    if meal_registration:
-        meal_choices = (
-            MealChoice.objects.filter(meal_registration=meal_registration)
-            .select_related("child", "meal")
-            .order_by("child__year_group", "child__last_name")
+    try:
+        dates = MealRegistration.objects.order_by("date").values_list("date", flat=True)
+        selected_date_str = request.GET.get("date")
+        selected_date = None
+        
+        if selected_date_str:
+            selected_date = validate_date_string(selected_date_str)
+            if not selected_date:
+                messages.warning(request, "Invalid date format. Showing first available date.")
+        
+        if not selected_date and dates:
+            selected_date = dates[0]
+        
+        meal_registration = (
+            MealRegistration.objects.filter(date=selected_date).first()
+            if selected_date
+            else None
         )
-        choices = list(meal_choices)
-        from collections import Counter
 
-        totals = Counter(choice.meal.name for choice in choices)
+        choices = []
+        totals = {}
+        if meal_registration:
+            meal_choices = (
+                MealChoice.objects.filter(meal_registration=meal_registration)
+                .select_related("child", "meal")
+                .order_by("child__year_group", "child__last_name")
+            )
+            choices = list(meal_choices)
+            from collections import Counter
+
+            totals = Counter(choice.meal.name for choice in choices)
+    except Exception as e:
+        logger.error(f"Error in admin_meal_orders: {str(e)}")
+        messages.error(request, "An error occurred loading meal orders.")
+        dates = []
+        selected_date = None
+        choices = []
+        totals = {}
+        meal_registration = None
 
     return render(
         request,
@@ -343,11 +466,36 @@ def delete_account(request):
     if request.method == "POST":
         user = request.user
         username = user.username
-        logout(request)
-        user.delete()
+        try:
+            logout(request)
+            user.delete()
+            logger.info(f"Account deleted for user: {username}")
+        except Exception as e:
+            logger.error(f"Error deleting account for {username}: {str(e)}")
+            messages.error(request, "An error occurred while deleting your account. Please contact support.")
+            return redirect("meal_ordering")
         return render(
             request,
             "meals/account_deleted.html",
             {"username": username},
         )
     return render(request, "meals/confirm_delete_account.html")
+
+
+# Custom error handlers
+def custom_404(request, exception):
+    """Custom 404 error handler"""
+    logger.warning(f"404 error: {request.path}")
+    return render(request, '404.html', status=404)
+
+
+def custom_500(request):
+    """Custom 500 error handler"""
+    logger.error(f"500 error on path: {request.path}")
+    return render(request, '500.html', status=500)
+
+
+def custom_403(request, exception):
+    """Custom 403 error handler"""
+    logger.warning(f"403 error: {request.path}")
+    return render(request, '403.html', status=403)
