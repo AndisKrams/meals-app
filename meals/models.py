@@ -23,6 +23,9 @@ class Child(models.Model):
     def __str__(self):
         return f"{self.first_name} {self.last_name} ({self.year_group})"
 
+    class Meta:
+        verbose_name_plural = "Children"
+
 
 class Meal(models.Model):
     name = models.CharField(max_length=100)
