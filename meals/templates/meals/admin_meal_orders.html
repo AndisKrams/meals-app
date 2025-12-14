@@ -1,28 +1,62 @@
-<table class="table" role="table" aria-label="Ordered meals for {{ selected_date }}">
-  <caption>Ordered meals for {{ selected_date|date:"M j, Y" }}</caption>
-  <thead>
-    <tr>
-      <th scope="col">Year</th>
-      <th scope="col">Last name</th>
-      <th scope="col">First name</th>
-      <th scope="col">Meal</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for choice in choices %}
-    <tr>
-      <td>{{ choice.child.year_group }}</td>
-      <td>{{ choice.child.last_name }}</td>
-      <td>{{ choice.child.first_name }}</td>
-      <td>{{ choice.meal.name }}</td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+<section aria-labelledby="orders-heading">
+  <h2 id="orders-heading">Admin Meal Orders</h2>
 
-<h3>Totals</h3>
-<ul aria-live="polite">
-  {% for meal, count in totals_items %}
-    <li>{{ meal }}: {{ count }}</li>
-  {% endfor %}
-</ul>
+  {% if dates %}
+    <form method="get" aria-label="Select date" style="margin-bottom: 1rem;">
+      <label for="date-select">Date:</label>
+      <select id="date-select" name="date" onchange="this.form.submit()">
+        {% for d in dates %}
+          <option value="{{ d|date:'Y-m-d' }}" {% if selected_date and d == selected_date %}selected{% endif %}>
+            {{ d|date:"M j, Y" }}
+          </option>
+        {% endfor %}
+      </select>
+      <noscript>
+        <button type="submit">Load</button>
+      </noscript>
+    </form>
+  {% endif %}
+
+  {% if meal_registration %}
+    <table class="table" role="table" aria-label="Ordered meals for {{ selected_date }}">
+      <caption>Ordered meals for {{ selected_date|date:"M j, Y" }}</caption>
+      <thead>
+        <tr>
+          <th scope="col">Year</th>
+          <th scope="col">Last name</th>
+          <th scope="col">First name</th>
+          <th scope="col">Meal</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if choices %}
+          {% for choice in choices %}
+          <tr>
+            <td>{{ choice.child.year_group }}</td>
+            <td>{{ choice.child.last_name }}</td>
+            <td>{{ choice.child.first_name }}</td>
+            <td>{{ choice.meal.name }}</td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="4" style="text-align:center;">No orders for the selected date.</td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+
+    <h3>Totals</h3>
+    {% if totals_items %}
+      <ul aria-live="polite">
+        {% for meal, count in totals_items %}
+          <li>{{ meal }}: {{ count }}</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>No totals available for the selected date.</p>
+    {% endif %}
+  {% else %}
+    <p>No meal registration found. Please create a menu for a date.</p>
+  {% endif %}
+</section>
