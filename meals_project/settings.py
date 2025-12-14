@@ -9,20 +9,21 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
+
 from pathlib import Path
 import os
 import dj_database_url
 
-if os.path.isfile('env.py'):
+if os.path.isfile("env.py"):
     import env
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-TEMPLATE_DIR = os.path.join(BASE_DIR, 'templates')
+TEMPLATE_DIR = os.path.join(BASE_DIR, "templates")
 
 # Ensure logs directory exists
-LOGS_DIR = BASE_DIR / 'logs'
+LOGS_DIR = BASE_DIR / "logs"
 LOGS_DIR.mkdir(exist_ok=True)
 
 # Quick-start development settings - unsuitable for production
@@ -35,64 +36,64 @@ SECRET_KEY = os.environ.get("SECRET_KEY")
 DEBUG = "DEVELOPMENT" in os.environ
 
 ALLOWED_HOSTS = [
-    '.herokuapp.com',
-    '127.0.0.1',
+    ".herokuapp.com",
+    "127.0.0.1",
 ]
 
 
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'django.contrib.sites',
-    'allauth',
-    'allauth.account',
-    'meals',  # Custom app for meal management
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "django.contrib.sites",
+    "allauth",
+    "allauth.account",
+    "meals",  # Custom app for meal management
 ]
 
 SITE_ID = 1
-LOGIN_URL = '/meals/login/'
-LOGIN_REDIRECT_URL = '/'
-LOGOUT_REDIRECT_URL = '/meals/login/'
+LOGIN_URL = "/meals/login/"
+LOGIN_REDIRECT_URL = "/"
+LOGOUT_REDIRECT_URL = "/meals/login/"
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'allauth.account.middleware.AccountMiddleware',
+    "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
 ]
 
-ACCOUNT_EMAIL_VERIFICATION = 'none'
+ACCOUNT_EMAIL_VERIFICATION = "none"
 
-ROOT_URLCONF = 'meals_project.urls'
+ROOT_URLCONF = "meals_project.urls"
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [TEMPLATE_DIR],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [TEMPLATE_DIR],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = 'meals_project.wsgi.application'
+WSGI_APPLICATION = "meals_project.wsgi.application"
 
 
 # Database
@@ -102,19 +103,21 @@ WSGI_APPLICATION = 'meals_project.wsgi.application'
 DATABASES = {}
 DATABASE_URL = os.environ.get("DATABASE_URL")
 if DATABASE_URL:
-    DATABASES['default'] = dj_database_url.parse(DATABASE_URL)
+    DATABASES["default"] = dj_database_url.parse(DATABASE_URL)
     # Disable persistent connections during collectstatic
-    if 'DYNO' in os.environ and not DEBUG:
-        DATABASES['default']['CONN_MAX_AGE'] = 0
+    if "DYNO" in os.environ and not DEBUG:
+        DATABASES["default"]["CONN_MAX_AGE"] = 0
 else:
     # fallback to local sqlite for development
-    DATABASES['default'] = {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+    DATABASES["default"] = {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
     }
 
-CSRF_TRUSTED_ORIGINS = ['https://*.herokuapp.com',
-                        'http://127.0.0.1:8000/',]
+CSRF_TRUSTED_ORIGINS = [
+    "https://*.herokuapp.com",
+    "http://127.0.0.1:8000/",
+]
 
 
 # Password validation
@@ -122,16 +125,16 @@ CSRF_TRUSTED_ORIGINS = ['https://*.herokuapp.com',
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
 
@@ -139,9 +142,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = "UTC"
 
 USE_I18N = True
 
@@ -151,68 +154,68 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = "static/"
 
 # Only include static dirs that exist
 STATICFILES_DIRS = []
-if (BASE_DIR / 'static').exists():
-    STATICFILES_DIRS.append(BASE_DIR / 'static')
+if (BASE_DIR / "static").exists():
+    STATICFILES_DIRS.append(BASE_DIR / "static")
 
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Whitenoise configuration for serving static files
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Logout redirect
-LOGOUT_REDIRECT_URL = '/meals/login/'
+LOGOUT_REDIRECT_URL = "/meals/login/"
 
 # Logging configuration
 LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': '{levelname} {asctime} {module} {message}',
-            'style': '{',
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "{levelname} {asctime} {module} {message}",
+            "style": "{",
         },
     },
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-            'formatter': 'verbose',
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
         },
     },
-    'loggers': {
-        'django': {
-            'handlers': ['console'],
-            'level': 'INFO',
-            'propagate': False,
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
         },
-        'meals': {
-            'handlers': ['console'],
-            'level': 'DEBUG' if DEBUG else 'INFO',
-            'propagate': False,
+        "meals": {
+            "handlers": ["console"],
+            "level": "DEBUG" if DEBUG else "INFO",
+            "propagate": False,
         },
     },
 }
 
 # Add file logging only in development
 if DEBUG and LOGS_DIR.exists():
-    LOGGING['handlers']['file'] = {
-        'class': 'logging.FileHandler',
-        'filename': LOGS_DIR / 'django.log',
-        'formatter': 'verbose',
+    LOGGING["handlers"]["file"] = {
+        "class": "logging.FileHandler",
+        "filename": LOGS_DIR / "django.log",
+        "formatter": "verbose",
     }
-    LOGGING['loggers']['django']['handlers'].append('file')
-    LOGGING['loggers']['meals']['handlers'].append('file')
+    LOGGING["loggers"]["django"]["handlers"].append("file")
+    LOGGING["loggers"]["meals"]["handlers"].append("file")
 
 # Custom error handlers (only in production)
 if not DEBUG:
-    HANDLER404 = 'meals.views.custom_404'
-    HANDLER500 = 'meals.views.custom_500'
-    HANDLER403 = 'meals.views.custom_403'
+    HANDLER404 = "meals.views.custom_404"
+    HANDLER500 = "meals.views.custom_500"
+    HANDLER403 = "meals.views.custom_403"

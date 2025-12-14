@@ -11,7 +11,7 @@ from django.core.exceptions import ValidationError
 from datetime import datetime
 import logging
 
-logger = logging.getLogger('meals')
+logger = logging.getLogger("meals")
 
 
 def validate_date_string(date_str):
@@ -19,7 +19,7 @@ def validate_date_string(date_str):
     if not date_str:
         return None
     try:
-        return datetime.strptime(date_str, '%Y-%m-%d').date()
+        return datetime.strptime(date_str, "%Y-%m-%d").date()
     except (ValueError, TypeError) as e:
         logger.warning(f"Invalid date format: {date_str} - {str(e)}")
         return None
@@ -31,15 +31,22 @@ def register_parent(request):
         if form.is_valid():
             try:
                 user = form.save()
-                messages.success(request, "Registration successful! You can now log in.")
+                messages.success(
+                    request, "Registration successful! You can now log in."
+                )
                 logger.info(f"New parent registered: {user.username}")
                 return redirect("login")
             except IntegrityError as e:
                 logger.error(f"Database error during registration: {str(e)}")
-                messages.error(request, "Registration failed due to a database error. Please try again.")
+                messages.error(
+                    request,
+                    "Registration failed due to a database error. Please try again.",
+                )
             except Exception as e:
                 logger.error(f"Unexpected error during registration: {str(e)}")
-                messages.error(request, "An unexpected error occurred. Please try again.")
+                messages.error(
+                    request, "An unexpected error occurred. Please try again."
+                )
         else:
             messages.error(request, "Please correct the errors below.")
     else:
@@ -105,7 +112,8 @@ def add_child(request):
                 child.full_clean()  # Run model validation
                 child.save()
                 messages.success(
-                    request, f"Child {child.first_name} {child.last_name} added successfully."
+                    request,
+                    f"Child {child.first_name} {child.last_name} added successfully.",
                 )
                 logger.info(f"Child added: {child.id} for parent: {parent.id}")
                 return redirect("child_list")
@@ -117,7 +125,9 @@ def add_child(request):
                 messages.error(request, "A database error occurred. Please try again.")
             except Exception as e:
                 logger.error(f"Unexpected error adding child: {str(e)}")
-                messages.error(request, "An unexpected error occurred. Please try again.")
+                messages.error(
+                    request, "An unexpected error occurred. Please try again."
+                )
         else:
             messages.error(request, "Please correct the errors below.")
     else:
@@ -137,7 +147,10 @@ def edit_child(request, child_id):
                 updated_child = form.save(commit=False)
                 updated_child.full_clean()
                 updated_child.save()
-                messages.success(request, f"Child {updated_child.first_name} {updated_child.last_name} updated successfully.")
+                messages.success(
+                    request,
+                    f"Child {updated_child.first_name} {updated_child.last_name} updated successfully.",
+                )
                 logger.info(f"Child updated: {child.id}")
                 return redirect("child_list")
             except ValidationError as e:
@@ -148,7 +161,9 @@ def edit_child(request, child_id):
                 messages.error(request, "A database error occurred. Please try again.")
             except Exception as e:
                 logger.error(f"Unexpected error updating child: {str(e)}")
-                messages.error(request, "An unexpected error occurred. Please try again.")
+                messages.error(
+                    request, "An unexpected error occurred. Please try again."
+                )
         else:
             messages.error(request, "Please correct the errors below.")
     else:
@@ -170,7 +185,9 @@ def delete_child(request, child_id):
             return redirect("child_list")
         except Exception as e:
             logger.error(f"Error deleting child {child_id}: {str(e)}")
-            messages.error(request, "An error occurred while deleting the child. Please try again.")
+            messages.error(
+                request, "An error occurred while deleting the child. Please try again."
+            )
     return render(request, "meals/confirm_delete_child.html", {"child": child})
 
 
@@ -183,19 +200,21 @@ def meal_ordering(request):
             request, "You have no registered children. Please add a child first."
         )
         return redirect("add_child")
-    
+
     try:
         available_dates = MealRegistration.objects.order_by("date").values_list(
             "date", flat=True
         )
         selected_date_str = request.GET.get("date")
         selected_date = None
-        
+
         if selected_date_str:
             selected_date = validate_date_string(selected_date_str)
             if not selected_date:
-                messages.warning(request, "Invalid date format. Showing next available date.")
-        
+                messages.warning(
+                    request, "Invalid date format. Showing next available date."
+                )
+
         if not selected_date:
             # Find first available date without choices for any child
             for date in available_dates:
@@ -206,7 +225,7 @@ def meal_ordering(request):
                     break
             if not selected_date and available_dates:
                 selected_date = available_dates[0]
-        
+
         meal_registration = (
             MealRegistration.objects.filter(date=selected_date).first()
             if selected_date
@@ -258,7 +277,7 @@ def meal_ordering(request):
                             )
                         else:
                             all_valid = False
-                    
+
                     if all_valid:
                         for msg in success_messages:
                             messages.success(request, msg)
@@ -280,10 +299,14 @@ def meal_ordering(request):
                 messages.error(request, "A database error occurred. Please try again.")
             except Exception as e:
                 logger.error(f"Unexpected error saving meal choices: {str(e)}")
-                messages.error(request, "An unexpected error occurred. Please try again.")
+                messages.error(
+                    request, "An unexpected error occurred. Please try again."
+                )
     except Exception as e:
         logger.error(f"Error in meal_ordering view: {str(e)}")
-        messages.error(request, "An error occurred loading meal options. Please try again.")
+        messages.error(
+            request, "An error occurred loading meal options. Please try again."
+        )
         return redirect("child_list")
     return render(
         request,
@@ -330,12 +353,12 @@ def edit_meal_choice(request, choice_id):
             MealChoice, id=choice_id, child__parent__user=request.user
         )
         meal_registration = choice.meal_registration
-        
+
         # Check if the meal date hasn't passed
         if meal_registration.date < timezone.now().date():
             messages.error(request, "Cannot edit past meal choices.")
             return redirect("meal_choice_history")
-        
+
         if request.method == "POST":
             form = MealChoiceForm(
                 request.POST,
@@ -351,7 +374,9 @@ def edit_meal_choice(request, choice_id):
                     return redirect("meal_choice_history")
                 except Exception as e:
                     logger.error(f"Error updating meal choice: {str(e)}")
-                    messages.error(request, "An error occurred updating the meal choice.")
+                    messages.error(
+                        request, "An error occurred updating the meal choice."
+                    )
             else:
                 messages.error(request, "Please correct the errors below.")
         else:
@@ -399,15 +424,17 @@ def admin_meal_orders(request):
         dates = MealRegistration.objects.order_by("date").values_list("date", flat=True)
         selected_date_str = request.GET.get("date")
         selected_date = None
-        
+
         if selected_date_str:
             selected_date = validate_date_string(selected_date_str)
             if not selected_date:
-                messages.warning(request, "Invalid date format. Showing first available date.")
-        
+                messages.warning(
+                    request, "Invalid date format. Showing first available date."
+                )
+
         if not selected_date and dates:
             selected_date = dates[0]
-        
+
         meal_registration = (
             MealRegistration.objects.filter(date=selected_date).first()
             if selected_date
@@ -472,7 +499,10 @@ def delete_account(request):
             logger.info(f"Account deleted for user: {username}")
         except Exception as e:
             logger.error(f"Error deleting account for {username}: {str(e)}")
-            messages.error(request, "An error occurred while deleting your account. Please contact support.")
+            messages.error(
+                request,
+                "An error occurred while deleting your account. Please contact support.",
+            )
             return redirect("meal_ordering")
         return render(
             request,
@@ -486,16 +516,16 @@ def delete_account(request):
 def custom_404(request, exception):
     """Custom 404 error handler"""
     logger.warning(f"404 error: {request.path}")
-    return render(request, '404.html', status=404)
+    return render(request, "404.html", status=404)
 
 
 def custom_500(request):
     """Custom 500 error handler"""
     logger.error(f"500 error on path: {request.path}")
-    return render(request, '500.html', status=500)
+    return render(request, "500.html", status=500)
 
 
 def custom_403(request, exception):
     """Custom 403 error handler"""
     logger.warning(f"403 error: {request.path}")
-    return render(request, '403.html', status=403)
+    return render(request, "403.html", status=403)
