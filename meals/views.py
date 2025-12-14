@@ -443,6 +443,7 @@ def admin_meal_orders(request):
 
         choices = []
         totals = {}
+        totals_items = []
         if meal_registration:
             meal_choices = (
                 MealChoice.objects.filter(meal_registration=meal_registration)
@@ -453,6 +454,8 @@ def admin_meal_orders(request):
             from collections import Counter
 
             totals = Counter(choice.meal.name for choice in choices)
+            # Provide a safe iterable to templates to avoid key collisions like 'items'
+            totals_items = list(totals.items())
     except Exception as e:
         logger.error(f"Error in admin_meal_orders: {str(e)}")
         messages.error(request, "An error occurred loading meal orders.")
@@ -460,6 +463,7 @@ def admin_meal_orders(request):
         selected_date = None
         choices = []
         totals = {}
+        totals_items = []
         meal_registration = None
 
     return render(
@@ -470,6 +474,7 @@ def admin_meal_orders(request):
             "selected_date": selected_date,
             "choices": choices,
             "totals": totals,
+            "totals_items": totals_items,
             "meal_registration": meal_registration,
         },
     )
