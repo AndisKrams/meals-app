@@ -11,6 +11,7 @@ class MealsAdminSite(AdminSite):
     site_header = 'School Meals Administration'
     site_title = 'Meals Admin'
     index_title = 'Welcome to School Meals Admin'
+    site_url = '/meals/'
 
     def get_urls(self):
         from django.urls import path
@@ -19,38 +20,13 @@ class MealsAdminSite(AdminSite):
         # Override the logout URL to redirect to admin login
         custom_urls = [
             path('logout/', auth_views.LogoutView.as_view(next_page='/admin/login/'), name='logout'),
+            path('meals-for-day/', self.admin_view(self.meals_for_day_view), name='meals-for-day'),
         ]
         # Put custom URL before default ones so it takes precedence
         return custom_urls + urls
 
-
-# Create the custom admin site instance
-admin_site = MealsAdminSite(name='admin')
-
-
-class MealAdmin(admin.ModelAdmin):
-    list_display = ('name', 'description')
-
-
-class MealRegistrationAdmin(admin.ModelAdmin):
-    list_display = ('date',)
-    filter_horizontal = ('meals',)
-
-
-class MealChoiceAdmin(admin.ModelAdmin):
-    list_display = ('child', 'meal', 'meal_registration')
-    list_filter = ('child__year_group', 'meal', 'meal_registration__date')
-    search_fields = ('child__first_name', 'child__last_name')
-
-    def get_urls(self):
-        urls = super().get_urls()
-        my_urls = [
-            path('meals-for-day/', self.admin_site.admin_view(self.meals_for_day), name='meals-for-day'),
-        ]
-        return my_urls + urls
-
-    def meals_for_day(self, request):
-        # Get the available dates that have meal choices
+    def meals_for_day_view(self, request):
+        """View for displaying meal orders by date"""
         available_dates = MealChoice.objects.order_by('meal_registration__date').values_list('meal_registration__date', flat=True).distinct()
 
         date_str = request.GET.get('date')
@@ -76,9 +52,43 @@ class MealChoiceAdmin(admin.ModelAdmin):
             'meal_totals': meal_totals,
             'date': date,
             'available_dates': available_dates,
+            'site_title': self.site_title,
+            'site_header': self.site_header,
+            'has_permission': True,
         }
 
         return TemplateResponse(request, 'admin/meals_for_day.html', context)
+
+    def index(self, request, extra_context=None):
+        """Override admin index to add custom links"""
+        extra_context = extra_context or {}
+        extra_context['custom_links'] = [
+            {
+                'title': 'View Meal Orders by Date',
+                'url': '/admin/meals-for-day/',
+                'description': 'See all meal orders organized by date'
+            }
+        ]
+        return super().index(request, extra_context)
+
+
+# Create the custom admin site instance
+admin_site = MealsAdminSite(name='admin')
+
+
+class MealAdmin(admin.ModelAdmin):
+    list_display = ('name', 'description')
+
+
+class MealRegistrationAdmin(admin.ModelAdmin):
+    list_display = ('date',)
+    filter_horizontal = ('meals',)
+
+
+class MealChoiceAdmin(admin.ModelAdmin):
+    list_display = ('child', 'meal', 'meal_registration')
+    list_filter = ('child__year_group', 'meal', 'meal_registration__date')
+    search_fields = ('child__first_name', 'child__last_name')
 
 
 class ParentAdmin(admin.ModelAdmin):

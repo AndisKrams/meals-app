@@ -3,15 +3,23 @@
 {% block content %}
   <h1>{{ title }}</h1>
 
-  <form method="get" action="{% url 'admin:meals-for-day' %}">
-    <label for="date">Date:</label>
-    <select id="date" name="date">
-      {% for d in available_dates %}
-        <option value="{{ d|date:'Y-m-d' }}" {% if d == date %}selected{% endif %}>{{ d|date:'Y-m-d' }}</option>
-      {% endfor %}
-    </select>
-    <button type="submit">Go</button>
-  </form>
+  {% if available_dates %}
+    <form method="get" action="{% url 'admin:meals-for-day' %}" style="margin-bottom: 2rem;">
+      <label for="date">Select Date:</label>
+      <select id="date" name="date" onchange="this.form.submit()">
+        {% for d in available_dates %}
+          <option value="{{ d|date:'Y-m-d' }}" {% if d == date %}selected{% endif %}>
+            {{ d|date:"D, M j, Y" }}
+          </option>
+        {% endfor %}
+      </select>
+      <noscript>
+        <button type="submit">Go</button>
+      </noscript>
+    </form>
+  {% else %}
+    <p><strong>No meal registrations with orders found.</strong> Orders will appear here once parents submit meal choices.</p>
+  {% endif %}
 
   {% if meals %}
     <h2>Meal Choice Totals</h2>

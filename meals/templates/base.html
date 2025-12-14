@@ -26,10 +26,6 @@
                     <li class="nav-item"><a class="nav-link" href="{% url 'child_list' %}">My Children</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'meal_ordering' %}">Choose Meal</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'meal_choice_history' %}">History</a></li>
-                    {% if user.is_staff %}
-                    <li class="nav-item"><a class="nav-link" href="{% url 'admin_meal_orders' %}">Admin: Orders</a>
-                    </li>
-                    {% endif %}
                     {% endif %}
                 </ul>
                 <ul class="navbar-nav ms-auto">
