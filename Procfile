@@ -1,1 +1,1 @@
-web: gunicorn meals_project.wsgi
+web: gunicorn meals_project.wsgi --timeout 30 --workers 2 --log-file -
