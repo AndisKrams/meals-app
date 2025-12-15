@@ -14,6 +14,14 @@ import logging
 logger = logging.getLogger("meals")
 
 
+def home(request):
+    """Landing page - shows welcome or redirects authenticated users to meal ordering"""
+    if request.user.is_authenticated:
+        return redirect("meal_ordering")
+    # Serve the login page as the landing page
+    return user_login(request)
+
+
 def validate_date_string(date_str):
     """Validate and parse date string in YYYY-MM-DD format"""
     if not date_str:

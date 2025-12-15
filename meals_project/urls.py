@@ -17,11 +17,11 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from django.contrib.auth import views as auth_views
-from django.views.generic import RedirectView
+from meals.views import home
 from meals.admin import admin_site
 
 urlpatterns = [
-    path('', RedirectView.as_view(url='/meals/login/', permanent=False), name='home'),
+    path('', home, name='home'),
     path('admin/', admin_site.urls),
     path("accounts/", include("allauth.urls")),
     path('meals/', include('meals.urls')),
