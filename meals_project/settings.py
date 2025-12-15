@@ -58,7 +58,7 @@ INSTALLED_APPS = [
 
 SITE_ID = 1
 LOGIN_URL = "/meals/login/"
-LOGIN_REDIRECT_URL = "/"
+LOGIN_REDIRECT_URL = "/meals/order/"
 LOGOUT_REDIRECT_URL = "/meals/login/"
 
 MIDDLEWARE = [
