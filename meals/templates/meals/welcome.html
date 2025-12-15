@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row justify-content-center mt-5">
+  <div class="col-md-8">
+    <h1 class="mb-4">Welcome to School Meals App</h1>
+    <p class="lead">Manage your child's meal preferences easily and efficiently.</p>
+    <p>Please sign in to get started:</p>
+    <a href="{% url 'login' %}" class="btn btn-primary btn-lg">Sign In</a>
+    <p class="mt-4">Don't have an account? <a href="{% url 'register_parent' %}">Register here</a></p>
+  </div>
+</div>
+{% endblock %}
