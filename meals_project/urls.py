@@ -21,7 +21,7 @@ from django.views.generic import RedirectView
 from meals.admin import admin_site
 
 urlpatterns = [
-    path('', RedirectView.as_view(url='/meals/', permanent=False), name='home'),
+    path('', RedirectView.as_view(url='/meals/login/', permanent=False), name='home'),
     path('admin/', admin_site.urls),
     path("accounts/", include("allauth.urls")),
     path('meals/', include('meals.urls')),
